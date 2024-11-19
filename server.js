@@ -5,31 +5,62 @@ const bodyParser = require('body-parser');
 const app = express();
 app.use(bodyParser.json());
 
-AWS.config.update({ region: 'us-east-1' }); // Cambia la región según tu configuración
+AWS.config.update({ region: 'us-east-1' });
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
+
+// Función para validar el token llamando a la Lambda "ValidarTokenAcceso"
+const validateToken = async (tenant_id, token) => {
+    const lambda = new AWS.Lambda();
+    const params = {
+        FunctionName: 'ValidarTokenAcceso',
+        InvocationType: 'RequestResponse',
+        Payload: JSON.stringify({ tenant_id, token })
+    };
+
+    try {
+        const response = await lambda.invoke(params).promise();
+        const result = JSON.parse(response.Payload);
+
+        if (result.statusCode !== 200) {
+            throw new Error(result.body || 'Token inválido');
+        }
+        return true; // Token válido
+    } catch (error) {
+        throw new Error(`Error al validar el token: ${error.message}`);
+    }
+};
 
 // Endpoint para crear una nueva película
 app.post('/pelicula', async (req, res) => {
     const { tenant_id, titulo, genero, duracion } = req.body;
+    const token = req.headers['authorization']; // Token en el header Authorization
 
-    const params = {
-        TableName: 'Pelicula',
-        Item: {
-            tenant_id,
-            titulo,
-            genero,
-            duracion
-        }
-    };
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized - Falta el token de autorización' });
+    }
 
     try {
+        // Validar el token antes de procesar la solicitud
+        await validateToken(tenant_id, token);
+
+        const params = {
+            TableName: 'Pelicula',
+            Item: {
+                tenant_id,
+                titulo,
+                genero,
+                duracion
+            }
+        };
+
         await dynamoDb.put(params).promise();
         res.status(201).json({
             message: 'Película creada exitosamente',
             pelicula: params.Item
         });
     } catch (error) {
-        res.status(500).json({ error: 'No se pudo crear la película', details: error.message });
+        const statusCode = error.message.includes('Token') ? 403 : 500;
+        res.status(statusCode).json({ error: error.message });
     }
 });
 
@@ -61,26 +92,35 @@ app.get('/pelicula/:tenant_id/:titulo', async (req, res) => {
 app.put('/pelicula/:tenant_id/:titulo', async (req, res) => {
     const { tenant_id, titulo } = req.params;
     const { genero, duracion } = req.body;
+    const token = req.headers['authorization']; // Token en el header Authorization
 
-    const params = {
-        TableName: 'Pelicula',
-        Key: { tenant_id, titulo },
-        UpdateExpression: 'set genero = :genero, duracion = :duracion',
-        ExpressionAttributeValues: {
-            ':genero': genero,
-            ':duracion': duracion
-        },
-        ReturnValues: 'UPDATED_NEW'
-    };
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized - Falta el token de autorización' });
+    }
 
     try {
+        // Validar el token antes de procesar la solicitud
+        await validateToken(tenant_id, token);
+
+        const params = {
+            TableName: 'Pelicula',
+            Key: { tenant_id, titulo },
+            UpdateExpression: 'set genero = :genero, duracion = :duracion',
+            ExpressionAttributeValues: {
+                ':genero': genero,
+                ':duracion': duracion
+            },
+            ReturnValues: 'UPDATED_NEW'
+        };
+
         const result = await dynamoDb.update(params).promise();
         res.json({
             message: 'Película actualizada',
             updatedAttributes: result.Attributes
         });
     } catch (error) {
-        res.status(500).json({ error: 'No se pudo actualizar la película', details: error.message });
+        const statusCode = error.message.includes('Token') ? 403 : 500;
+        res.status(statusCode).json({ error: error.message });
     }
 });
 
