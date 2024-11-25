@@ -6,15 +6,28 @@ provider:
   runtime: nodejs18.x
   memorySize: 1024
   timeout: 30
-  iam:
-    role: arn:aws:iam::397279833444:role/LabRole
+  region: us-east-1
   environment:
     TABLE_NAME_PELICULA: ${sls:stage}-tp_pelicula
-  region: us-east-1
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+          Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TABLE_NAME_PELICULA}"
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: "*"
 
 functions:
   crear_pelicula:
-    handler: server.crearPelicula
+    handler: server.handler
     events:
       - http:
           path: /pelicula
@@ -22,7 +35,7 @@ functions:
           cors: true
 
   obtener_pelicula:
-    handler: server.obtenerPelicula
+    handler: server.handler
     events:
       - http:
           path: /pelicula/{tenant_id}/{titulo}
@@ -30,7 +43,7 @@ functions:
           cors: true
 
   actualizar_pelicula:
-    handler: server.actualizarPelicula
+    handler: server.handler
     events:
       - http:
           path: /pelicula/{tenant_id}/{titulo}
@@ -48,18 +61,9 @@ resources:
             AttributeType: S
           - AttributeName: titulo
             AttributeType: S
-          - AttributeName: genero
-            AttributeType: S # Asegúrate de incluir "genero" aquí para el índice secundario
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
           - AttributeName: titulo
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
-        GlobalSecondaryIndexes:
-          - IndexName: generoIndex
-            KeySchema:
-              - AttributeName: genero
-                KeyType: HASH
-            Projection:
-              ProjectionType: ALL

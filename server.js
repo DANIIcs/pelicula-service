@@ -99,6 +99,5 @@ app.put('/pelicula/:tenant_id/:titulo', async (req, res) => {
 });
 
 // Exportar el handler para que funcione con AWS Lambda
-module.exports.crearPelicula = serverless(app); // Adaptar el handler de Express a Lambda
-module.exports.obtenerPelicula = serverless(app);
-module.exports.actualizarPelicula = serverless(app);
+module.exports.handler = serverless(app);
+
