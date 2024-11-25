@@ -5,7 +5,7 @@ node_modules/
 logs
 *.log
 
-# Serverless Framework
+# Serverless Framework cache
 .serverless/
 
 # IDE/editor files
