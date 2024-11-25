@@ -1,0 +1,63 @@
+org: danielcaballeros
+service: api-pelicula
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  memorySize: 1024
+  timeout: 30
+  iam:
+    role: arn:aws:iam::397279833444:role/LabRole
+  environment:
+    TABLE_NAME_PELICULA: ${sls:stage}-tp_pelicula
+  region: us-east-1
+
+functions:
+  crear_pelicula:
+    handler: server.crearPelicula
+    events:
+      - http:
+          path: /pelicula
+          method: post
+          cors: true
+
+  obtener_pelicula:
+    handler: server.obtenerPelicula
+    events:
+      - http:
+          path: /pelicula/{tenant_id}/{titulo}
+          method: get
+          cors: true
+
+  actualizar_pelicula:
+    handler: server.actualizarPelicula
+    events:
+      - http:
+          path: /pelicula/{tenant_id}/{titulo}
+          method: put
+          cors: true
+
+resources:
+  Resources:
+    TablaPelicula:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_NAME_PELICULA}
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: titulo
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH
+          - AttributeName: titulo
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        GlobalSecondaryIndexes:
+          - IndexName: generoIndex
+            KeySchema:
+              - AttributeName: genero
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL

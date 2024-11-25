@@ -1,6 +1,7 @@
 const express = require('express');
 const AWS = require('aws-sdk');
 const bodyParser = require('body-parser');
+const serverless = require('serverless-http'); // Adaptador para Lambda
 
 const app = express();
 app.use(bodyParser.json());
@@ -44,7 +45,7 @@ app.post('/pelicula', async (req, res) => {
         await validateToken(tenant_id, token);
 
         const params = {
-            TableName: 'Pelicula',
+            TableName: process.env.TABLE_NAME_PELICULA, // Usa la variable de entorno
             Item: {
                 tenant_id,
                 titulo,
@@ -69,7 +70,7 @@ app.get('/pelicula/:tenant_id/:titulo', async (req, res) => {
     const { tenant_id, titulo } = req.params;
 
     const params = {
-        TableName: 'Pelicula',
+        TableName: process.env.TABLE_NAME_PELICULA, // Usa la variable de entorno
         Key: {
             tenant_id,
             titulo
@@ -103,7 +104,7 @@ app.put('/pelicula/:tenant_id/:titulo', async (req, res) => {
         await validateToken(tenant_id, token);
 
         const params = {
-            TableName: 'Pelicula',
+            TableName: process.env.TABLE_NAME_PELICULA, // Usa la variable de entorno
             Key: { tenant_id, titulo },
             UpdateExpression: 'set genero = :genero, duracion = :duracion',
             ExpressionAttributeValues: {
@@ -124,7 +125,7 @@ app.put('/pelicula/:tenant_id/:titulo', async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+// Exportar el handler para que funcione con AWS Lambda
+module.exports.crearPelicula = serverless(app); // Adaptar el handler de Express a Lambda
+module.exports.obtenerPelicula = serverless(app);
+module.exports.actualizarPelicula = serverless(app);
