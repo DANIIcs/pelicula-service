@@ -18,6 +18,8 @@ const validateToken = async (tenant_id, token) => {
 
 // Endpoint para crear una nueva película
 app.post('/pelicula', async (req, res) => {
+    console.log("Body recibido:", req.body); // Log del cuerpo de la solicitud
+
     const { tenant_id, titulo, genero, duracion } = req.body;
 
     try {
@@ -34,15 +36,19 @@ app.post('/pelicula', async (req, res) => {
             }
         };
 
+        console.log("Parámetros DynamoDB:", params); // Log de los parámetros a insertar
+
         await dynamoDb.put(params).promise();
         res.status(201).json({
             message: 'Película creada exitosamente',
             pelicula: params.Item
         });
     } catch (error) {
+        console.error("Error al crear película:", error); // Log del error
         res.status(500).json({ error: error.message });
     }
 });
+
 
 // Endpoint para obtener una película por tenant_id y título
 app.get('/pelicula/:tenant_id/:titulo', async (req, res) => {
