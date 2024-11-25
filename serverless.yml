@@ -48,6 +48,8 @@ resources:
             AttributeType: S
           - AttributeName: titulo
             AttributeType: S
+          - AttributeName: genero
+            AttributeType: S # Asegúrate de incluir "genero" aquí para el índice secundario
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
