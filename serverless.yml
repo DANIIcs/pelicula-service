@@ -13,7 +13,7 @@ provider:
 
 functions:
   crear_pelicula:
-    handler: server.handler
+    handler: server.crearPelicula
     events:
       - http:
           path: /pelicula
@@ -21,7 +21,7 @@ functions:
           cors: true
 
   obtener_pelicula:
-    handler: server.handler
+    handler: server.obtenerPelicula
     events:
       - http:
           path: /pelicula/{tenant_id}/{titulo}
@@ -29,7 +29,7 @@ functions:
           cors: true
 
   actualizar_pelicula:
-    handler: server.handler
+    handler: server.actualizarPelicula
     events:
       - http:
           path: /pelicula/{tenant_id}/{titulo}

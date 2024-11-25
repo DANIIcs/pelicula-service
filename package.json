@@ -1,19 +1,12 @@
 {
   "name": "pelicula-service",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
     "aws-sdk": "^2.1692.0",
-    "body-parser": "^1.20.3",
-    "express": "^4.21.1",
-    "pelicula-service": "file:",
-    "serverless-http": "^3.2.0"
+    "pelicula-service": "file:"
   }
 }
