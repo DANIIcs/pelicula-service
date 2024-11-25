@@ -3,20 +3,44 @@ const AWS = require('aws-sdk');
 AWS.config.update({ region: 'us-east-1' });
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
-// Función simulada para validar el token (sin validación real)
+// Función para validar el token llamando a la Lambda "ValidarTokenAcceso"
 const validateToken = async (tenant_id, token) => {
-    console.log(`Simulando validación de token para tenant_id: ${tenant_id}`);
-    return true; // Retornar siempre true
+    const lambda = new AWS.Lambda();
+    const params = {
+        FunctionName: 'ValidarTokenAcceso',
+        InvocationType: 'RequestResponse',
+        Payload: JSON.stringify({ tenant_id, token }),
+    };
+
+    try {
+        const response = await lambda.invoke(params).promise();
+        const result = JSON.parse(response.Payload);
+
+        if (result.statusCode !== 200) {
+            throw new Error(result.body || 'Token inválido');
+        }
+        return true; // Token válido
+    } catch (error) {
+        throw new Error(`Error al validar el token: ${error.message}`);
+    }
 };
 
 // Handler para crear una nueva película
 module.exports.crearPelicula = async (event) => {
     const body = JSON.parse(event.body);
     const { tenant_id, titulo, genero, duracion } = body;
+    const token = event.headers['authorization']; // Token en el header Authorization
+
+    if (!token) {
+        return {
+            statusCode: 401,
+            body: JSON.stringify({ error: 'Unauthorized - Falta el token de autorización' }),
+        };
+    }
 
     try {
-        // Validación del token simulada
-        await validateToken(tenant_id, null);
+        // Validación del token
+        await validateToken(tenant_id, token);
 
         const params = {
             TableName: process.env.TABLE_NAME_PELICULA,
@@ -40,7 +64,7 @@ module.exports.crearPelicula = async (event) => {
     } catch (error) {
         console.error("Error al crear película:", error);
         return {
-            statusCode: 500,
+            statusCode: error.message.includes('Token') ? 403 : 500,
             body: JSON.stringify({ error: error.message }),
         };
     }
@@ -87,10 +111,18 @@ module.exports.actualizarPelicula = async (event) => {
     const { tenant_id, titulo } = event.pathParameters;
     const body = JSON.parse(event.body);
     const { genero, duracion } = body;
+    const token = event.headers['authorization']; // Token en el header Authorization
+
+    if (!token) {
+        return {
+            statusCode: 401,
+            body: JSON.stringify({ error: 'Unauthorized - Falta el token de autorización' }),
+        };
+    }
 
     try {
-        // Validación del token simulada
-        await validateToken(tenant_id, null);
+        // Validación del token
+        await validateToken(tenant_id, token);
 
         const params = {
             TableName: process.env.TABLE_NAME_PELICULA,
@@ -113,8 +145,9 @@ module.exports.actualizarPelicula = async (event) => {
             }),
         };
     } catch (error) {
+        console.error("Error al actualizar película:", error);
         return {
-            statusCode: 500,
+            statusCode: error.message.includes('Token') ? 403 : 500,
             body: JSON.stringify({ error: error.message }),
         };
     }
