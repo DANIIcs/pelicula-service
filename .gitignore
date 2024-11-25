@@ -1,0 +1,19 @@
+# Node.js dependencies
+node_modules/
+
+# Logs
+logs
+*.log
+
+# System files
+.DS_Store
+
+# Generated files
+package-lock.json
+yarn.lock
+npm-debug.log*
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
