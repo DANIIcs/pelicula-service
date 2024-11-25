@@ -13,6 +13,7 @@
     "aws-sdk": "^2.1692.0",
     "body-parser": "^1.20.3",
     "express": "^4.21.1",
-    "pelicula-service": "file:"
+    "pelicula-service": "file:",
+    "serverless-http": "^3.2.0"
   }
 }
