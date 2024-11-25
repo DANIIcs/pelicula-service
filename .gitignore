@@ -5,13 +5,13 @@ node_modules/
 logs
 *.log
 
-# Generated files
-package-lock.json
+# Serverless Framework
+.serverless/
 
 # IDE/editor files
 .vscode/
 .idea/
-*.swp
 
-# Serverless Framework
-.serverless/
+# OS files
+.DS_Store
+Thumbs.db
