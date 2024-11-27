@@ -27,6 +27,12 @@ exports.handler = async (event) => {
         };
 
         const result = await dynamodb.update(params).promise();
+        if (!result.Attributes) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({ message: 'Película no encontrada para actualizar' }),
+            };
+        }
 
         return {
             statusCode: 200,
