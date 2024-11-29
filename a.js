@@ -84,7 +84,7 @@ exports.handler = async (event) => {
         return {
             statusCode: 200,
             message: "Pelicula creada exitosamente",
-            response: Item
+            response: dbResponse.Item
         };
 
     } catch (error) {
