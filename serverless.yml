@@ -17,7 +17,7 @@ functions:
     handler: a.handler
     events:
       - http:
-          path: /pelicula
+          path: /a
           method: post
           cors: true
 
