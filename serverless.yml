@@ -13,15 +13,6 @@ provider:
     LAMBDA_VALIDAR_TOKEN: api-usuarios-${sls:stage}-validar_token
 
 functions:
-  a:
-    handler: a.handler
-    events:
-      - http:
-          path: /a
-          method: post
-          cors: true
-          integration: lambda
-
   crearPelicula:
     handler: crearPelicula.handler
     events:
