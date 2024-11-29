@@ -20,7 +20,7 @@ functions:
           path: /a
           method: post
           cors: true
-          integration: lambda
+          integration: lambda
 
   crearPelicula:
     handler: crearPelicula.handler
@@ -29,7 +29,7 @@ functions:
           path: /pelicula
           method: post
           cors: true
-          integration: lambda
+          integration: lambda
 
   obtenerPeliculaById:
     handler: obtenerPeliculaById.handler
@@ -38,7 +38,7 @@ functions:
           path: /pelicula/{tenant_id}/{titulo}
           method: get
           cors: true
-          integration: lambda
+          integration: lambda
 
   obtenerPeliculas:
     handler: obtenerPeliculas.handler
@@ -47,7 +47,7 @@ functions:
           path: /peliculas
           method: get
           cors: true
-          integration: lambda
+          integration: lambda
 
   modificarPelicula:
     handler: modificarPelicula.handler
@@ -56,7 +56,7 @@ functions:
           path: /pelicula/{tenant_id}/{titulo}
           method: put
           cors: true
-          integration: lambda
+          integration: lambda
 
   eliminarPelicula:
     handler: eliminarPelicula.handler
@@ -65,7 +65,7 @@ functions:
           path: /pelicula
           method: delete
           cors: true
-          integration: lambda
+          integration: lambda
 
 resources:
   Resources:
