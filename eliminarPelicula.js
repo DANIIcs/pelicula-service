@@ -1,34 +1,56 @@
 const AWS = require('aws-sdk');
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-
-const PELICULA_TABLE = process.env.TABLE_NAME_PELICULA;
 
 exports.handler = async (event) => {
-    try {
-        const { tenant_id, titulo } = JSON.parse(event.body);
+    console.log(event);
 
-        if (!tenant_id || !titulo) {
+    try {
+        // Analizar el cuerpo de la solicitud
+        let body = event.body || {};
+        if (typeof body === 'string') {
+            body = JSON.parse(body);
+        }
+
+        // Validar la existencia de las variables de entorno
+        if (!process.env.TABLE_NAME_PELICULA) {
             return {
-                statusCode: 400,
-                body: JSON.stringify({ message: 'tenant_id y título son obligatorios' }),
+                statusCode: 500,
+                status: 'Internal Server Error - Variable de entorno TABLE_NAME_PELICULA no configurada',
             };
         }
 
+        const tabla_peliculas = process.env.TABLE_NAME_PELICULA;
+
+        // Validar que tenant_id y título estén presentes
+        const { tenant_id, titulo } = body;
+        if (!tenant_id || !titulo) {
+            return {
+                statusCode: 400,
+                status: 'Bad Request - tenant_id y título son obligatorios',
+            };
+        }
+
+        // Eliminar la película desde DynamoDB
+        const dynamodb = new AWS.DynamoDB.DocumentClient();
         const params = {
-            TableName: PELICULA_TABLE,
+            TableName: tabla_peliculas,
             Key: { tenant_id, titulo },
         };
 
-        await dynamodb.delete(params).promise();
+        const deleteResponse = await dynamodb.delete(params).promise();
 
+        // Salida (json)
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: 'Película eliminada con éxito' }),
+            message: 'Película eliminada con éxito',
+            response: deleteResponse,
         };
     } catch (error) {
+        console.error(`Error inesperado: ${error.message}`);
+
         return {
             statusCode: 500,
-            body: JSON.stringify({ message: 'Error al eliminar la película' }),
+            status: 'Internal Server Error - Error al eliminar la película',
+            error: error.message,
         };
     }
 };
