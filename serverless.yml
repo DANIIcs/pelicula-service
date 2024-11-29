@@ -53,7 +53,7 @@ functions:
     handler: eliminarPelicula.handler
     events:
       - http:
-          path: /pelicula
+          path: /pelicula/{tenant_id}/{titulo}
           method: delete
           cors: true
           integration: lambda
