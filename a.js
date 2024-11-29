@@ -4,8 +4,40 @@ exports.handler = async (event) => {
     console.log(event);
 
     try {
-        // Obtener el token de autorización
-        const token = event.headers?.Authorization?.split(' ')[1];
+        // Analizar el cuerpo de la solicitud
+        let body = event.body || {};
+        if (typeof body === 'string') {
+            body = JSON.parse(body);
+        }
+
+        // Obtener el tenant_id y user_id
+        const tenant_id = body.tenant_id;
+        const titulo = body.titulo;
+        const genero = body.genero;
+        const duracion = body.duracion;
+
+        // Validar la existencia de las variables de entorno
+        if (!process.env.TABLE_NAME_PELICULA || !process.env.LAMBDA_VALIDAR_TOKEN) {
+            return {
+                statusCode: 500,
+                status: 'Internal Server Error - Variables de entorno no configuradas'
+            };
+        }
+
+        // Obtener el nombre de la tabla y lambda de la variable de entorno
+        const tabla_peliculas = process.env.TABLE_NAME_PELICULA;
+        const lambda_token = process.env.LAMBDA_VALIDAR_TOKEN;
+
+        // Validar que tenant_id y user_id estén presentes
+        if (!tenant_id || !titulo || !genero || !duracion) {
+            return {
+                statusCode: 400,
+                status: 'Bad Request - Faltan datos en la solicitud'
+            };
+        }
+
+        // Proteger el Lambda
+        const token = event.headers?.Authorization;
         if (!token) {
             return {
                 statusCode: 401,
@@ -13,63 +45,46 @@ exports.handler = async (event) => {
             };
         }
 
-        // Obtener el tenant_id del cuerpo de la solicitud
-        let body = event.body || {};
-        if (typeof body === 'string') {
-            body = JSON.parse(body);
-        }
-
-        const tenant_id = body.tenant_id;
-        if (!tenant_id) {
-            return {
-                statusCode: 400,
-                status: 'Bad Request - Faltan campos obligatorios (tenant_id)'
-            };
-        }
-
-        // Validar el token llamando al Lambda de validación
-        const isValidToken = await validateToken(tenant_id, token);
-        if (!isValidToken) {
-            return {
-                statusCode: 403,
-                status: 'Forbidden - Token inválido o expirado'
-            };
-        }
-
-        // Validar los demás campos necesarios
-        const { titulo, genero, duracion } = body;
-        if (!titulo || !genero || !duracion) {
-            return {
-                statusCode: 400,
-                status: 'Bad Request - Faltan campos obligatorios (titulo, genero, duracion)'
-            };
-        }
-
-        // Configurar DynamoDB
-        const dynamodb = new AWS.DynamoDB.DocumentClient();
-        const PELICULA_TABLE = process.env.TABLE_NAME_PELICULA;
-
-        // Crear la película
-        const item = {
+        // Invocar otro Lambda para validar el token
+        const lambda = new AWS.Lambda();
+        const payloadString = JSON.stringify({
             tenant_id,
-            titulo,
-            genero,
-            duracion,
-            created_at: new Date().toISOString() // Registrar la fecha de creación
-        };
+            token
+        });
 
-        await dynamodb.put({
-            TableName: PELICULA_TABLE,
-            Item: item
+        const invokeResponse = await lambda.invoke({
+            FunctionName: lambda_token,
+            InvocationType: 'RequestResponse',
+            Payload: payloadString
         }).promise();
 
-        // Respuesta exitosa
-        return {
-            statusCode: 201,
-            response: {
-                message: 'Película creada con éxito',
-                pelicula: item
+        const response = JSON.parse(invokeResponse.Payload);
+        console.log(response);
+
+        if (response.statusCode === 403) {
+            return {
+                statusCode: 403,
+                status: 'Forbidden - Acceso NO Autorizado'
+            };
+        }
+
+        // Proceso - Obtener datos desde DynamoDB
+        const dynamodb = new AWS.DynamoDB.DocumentClient();
+        const dbResponse = await dynamodb.put({
+            TableName: tabla_peliculas,
+            Item: {
+                tenant_id,
+                titulo,
+                genero,
+                duracion
             }
+        }).promise();
+
+        // Salida (json)
+        return {
+            statusCode: 200,
+            message: "Pelicula creada exitosamente",
+            response: item
         };
 
     } catch (error) {
@@ -77,31 +92,7 @@ exports.handler = async (event) => {
 
         return {
             statusCode: 500,
-            status: 'Internal Server Error - Ocurrió un error inesperado al crear la película'
+            status: 'Internal Server Error - Ocurrió un error inesperado'
         };
     }
 };
-
-// Validar el token invocando un Lambda externo
-async function validateToken(tenant_id, token) {
-    try {
-        const lambda = new AWS.Lambda();
-        const lambdaName = process.env.LAMBDA_VALIDAR_TOKEN; // Nombre del Lambda que valida tokens
-
-        const payloadString = JSON.stringify({ tenant_id, token });
-
-        const invokeResponse = await lambda.invoke({
-            FunctionName: lambdaName,
-            InvocationType: 'RequestResponse',
-            Payload: payloadString
-        }).promise();
-
-        const response = JSON.parse(invokeResponse.Payload);
-
-        // El token es válido solo si el Lambda responde con un código 200
-        return response.statusCode === 200;
-    } catch (error) {
-        console.error('Error al invocar el Lambda para validar el token:', error.message);
-        return false;
-    }
-}
