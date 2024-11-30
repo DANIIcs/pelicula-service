@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk');
-const { v4: uuidv4 } = require('uuid'); // Corregido para importar correctamente uuid
+const { randomUUID } = require('crypto'); // Usar randomUUID de crypto
 
 exports.handler = async (event) => {
     console.log(event);
@@ -70,7 +70,7 @@ exports.handler = async (event) => {
         }
 
         // Generar un UUID único para la película
-        const uuid = uuidv4();
+        const uuid = randomUUID();
 
         // Proceso - Guardar datos en DynamoDB
         const dynamodb = new AWS.DynamoDB.DocumentClient();
