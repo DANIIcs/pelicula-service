@@ -1,4 +1,5 @@
 const AWS = require('aws-sdk');
+const { v4: uuidv4 } = require('uuid'); // Corregido para importar correctamente uuid
 
 exports.handler = async (event) => {
     console.log(event);
@@ -68,12 +69,16 @@ exports.handler = async (event) => {
             };
         }
 
+        // Generar un UUID único para la película
+        const uuid = uuidv4();
+
         // Proceso - Guardar datos en DynamoDB
         const dynamodb = new AWS.DynamoDB.DocumentClient();
         const dbResponse = await dynamodb.put({
             TableName: tabla_peliculas,
             Item: {
                 tenant_id,
+                uuid,
                 titulo,
                 genero,
                 duracion,
