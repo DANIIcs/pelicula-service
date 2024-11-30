@@ -15,21 +15,24 @@ exports.handler = async (event) => {
         const tabla_peliculas = process.env.TABLE_NAME_PELICULA;
 
         // Obtener los parámetros de la solicitud
-        const { tenant_id, titulo } = event.pathParameters || {};
+        const { tenant_id, uuid } = event.pathParameters || {};
 
         // Validar que los parámetros estén presentes
-        if (!tenant_id || !titulo) {
+        if (!tenant_id || !uuid) {
             return {
                 statusCode: 400,
-                status: 'Bad Request - tenant_id y título son obligatorios',
+                status: 'Bad Request - tenant_id y uuid son obligatorios',
             };
         }
 
-        // Configurar los parámetros para obtener la película
+        // Configurar los parámetros para obtener la película usando tenant_id y uuid
         const dynamodb = new AWS.DynamoDB.DocumentClient();
         const params = {
             TableName: tabla_peliculas,
-            Key: { tenant_id, titulo },
+            Key: {
+                tenant_id, // Clave de partición
+                uuid,      // Clave de ordenación
+            },
         };
 
         // Obtener la película desde DynamoDB
