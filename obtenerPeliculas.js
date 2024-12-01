@@ -14,12 +14,12 @@ exports.handler = async () => {
 
         const tabla_peliculas = process.env.TABLE_NAME_PELICULA;
 
-        // Configurar los parámetros DynamoDB
+        // Configurar los parámetros para el escaneo de DynamoDB
         const dynamodb = new AWS.DynamoDB.DocumentClient();
         const params = { TableName: tabla_peliculas };
 
         // Obtener todas las películas desde DynamoDB
-        const result = await dynamodb.query(params).promise();
+        const result = await dynamodb.scan(params).promise();
 
         // Respuesta exitosa
         return {
