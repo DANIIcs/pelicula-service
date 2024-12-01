@@ -22,15 +22,6 @@ functions:
           cors: true
           integration: lambda
 
-  obtenerPeliculaById:
-    handler: obtenerPeliculaById.handler
-    events:
-      - http:
-          path: /pelicula/{uuid}
-          method: get
-          cors: true
-          integration: lambda
-
   obtenerPeliculas:
     handler: obtenerPeliculas.handler
     events:
